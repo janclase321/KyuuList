@@ -2,28 +2,38 @@ import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Typography from '@mui/material/Typography'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const FOOTER_LINKS = [
   {
     heading: 'Browse',
     links: [
       { label: 'Home', to: '/' },
-      { label: 'Top Rated', to: '/' },
-      { label: 'Airing Now', to: '/' },
-      { label: 'Upcoming', to: '/' },
-    ],
-  },
-  {
-    heading: 'Account',
-    links: [
-      { label: 'My Profile', to: '/profile' },
-      { label: 'Watchlist', to: '/profile' },
+      { label: 'All Anime', to: '/Anime' },
+      { label: 'Top Rated', to: '/category/top-rated' },
+      { label: 'Airing Now', to: '/category/airing' },
+      { label: 'Upcoming', to: '/category/upcoming' },
     ],
   },
 ]
 
 export default function Footer() {
+  const { user, profile } = useAuth()
   const year = new Date().getFullYear()
+
+  // Account column only makes sense when logged in, since both links
+  // need a real :handle to resolve to an actual route.
+  const accountColumn =
+    user && profile?.handle
+      ? {
+          heading: 'Account',
+          links: [
+            { label: 'Profile', to: `/profile/${profile.handle}` }
+          ],
+        }
+      : null
+
+  const columns = accountColumn ? [...FOOTER_LINKS, accountColumn] : FOOTER_LINKS
 
   return (
     <Box
@@ -70,7 +80,7 @@ export default function Footer() {
 
           {/* Link columns */}
           <Box sx={{ display: 'flex', gap: { xs: 4, sm: 6 }, flexWrap: 'wrap' }}>
-            {FOOTER_LINKS.map((column) => (
+            {columns.map((column) => (
               <Box key={column.heading}>
                 <Typography
                   sx={{
