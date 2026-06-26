@@ -6,6 +6,11 @@ import { useEffect, useRef, useState } from 'react'
  * AniList query that returns { media, hasNextPage }.
  *
  * fetchPage: (page, perPage) => Promise<{ media, hasNextPage }>
+ *            Must be referentially stable (wrap in useCallback if it
+ *            captures changing values like a genre filter or sort key) —
+ *            this hook re-runs its initial load whenever fetchPage changes,
+ *            which is what lets a page like "Browse Anime" refetch when
+ *            the user picks a different genre or sort.
  * perPage: items per page/request
  */
 export function usePaginatedAnime(fetchPage, perPage = 8) {
@@ -48,9 +53,10 @@ export function usePaginatedAnime(fetchPage, perPage = 8) {
     return () => {
       cancelled = true
     }
-    // fetchPage is expected to be stable (defined outside render or memoized)
+    // perPage intentionally omitted — changing page size alone shouldn't
+    // trigger a full refetch for existing carousel usages.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchPage])
 
   async function handleNearEnd() {
     if (isFetching.current || !hasNextPage.current) return

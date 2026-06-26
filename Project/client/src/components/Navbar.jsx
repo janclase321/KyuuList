@@ -12,6 +12,21 @@ import AuthModal from './AuthModal.jsx'
 import SearchBar from './SearchBar.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
+const navLinkSx = {
+  color: 'rgba(255,255,255,0.55)',
+  fontWeight: 500,
+  fontSize: '0.8rem',
+  letterSpacing: '0.04em',
+  textTransform: 'none',
+  px: 1.5,
+  borderRadius: '20px',
+  transition: 'color 0.2s',
+  '&:hover': {
+    color: '#f9a8d4',
+    background: 'rgba(249, 168, 212, 0.08)',
+  },
+}
+
 export default function Navbar() {
   const { user, profile, loading, signOut } = useAuth()
 
@@ -70,28 +85,15 @@ export default function Navbar() {
         {/* Nav links */}
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.5, mr: 2 }}>
           <SearchBar size="compact" />
-          {['Anime', 'Manga', 'Rankings'].map((label) => (
-            <Button
-              key={label}
-              size="small"
-              sx={{
-                color: 'rgba(255,255,255,0.55)',
-                fontWeight: 500,
-                fontSize: '0.8rem',
-                letterSpacing: '0.04em',
-                textTransform: 'none',
-                px: 1.5,
-                borderRadius: '20px',
-                transition: 'color 0.2s',
-                '&:hover': {
-                  color: '#f9a8d4',
-                  background: 'rgba(249, 168, 212, 0.08)',
-                },
-              }}
-            >
-              {label}
-            </Button>
-          ))}
+          <Button component={Link} to="/" size="small" sx={navLinkSx}>
+            Home
+          </Button>
+          <Button component={Link} to="/Anime" size="small" sx={navLinkSx}>
+            Anime
+          </Button>
+          <Button component={Link} to="/category/top-rated" size="small" sx={navLinkSx}>
+            Rankings
+          </Button>
         </Box>
 
         {/* Auth area */}

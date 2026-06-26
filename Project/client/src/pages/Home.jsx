@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Container from '@mui/material/Container'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
+import IconButton from '@mui/material/IconButton'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import HeroSlideshow from '../components/HeroSlideshow.jsx'
 import AnimeCarousel from '../components/AnimeCarousel.jsx'
 import AnimeModal from '../components/AnimeModal.jsx'
@@ -34,6 +37,42 @@ function CarouselSkeleton() {
           }}
         />
       ))}
+    </Box>
+  )
+}
+
+// Section title with a circular arrow button that links to the full
+// browsing page for that category (e.g. /category/top-rated).
+function SectionHeader({ title, to }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, mb: 3 }}>
+      <Typography
+        variant="h5"
+        sx={{ fontWeight: 800, color: '#f1e9ff' }}
+      >
+        {title}
+      </Typography>
+      <IconButton
+        component={Link}
+        to={to}
+        aria-label={`See all ${title}`}
+        size="small"
+        sx={{
+          width: 30,
+          height: 30,
+          color: 'rgba(255,255,255,0.6)',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255, 182, 215, 0.18)',
+          transition: 'color 0.15s ease, background 0.15s ease, transform 0.15s ease',
+          '&:hover': {
+            color: '#f9a8d4',
+            background: 'rgba(249, 168, 212, 0.1)',
+            transform: 'translateX(2px)',
+          },
+        }}
+      >
+        <ArrowForwardIcon sx={{ fontSize: '1rem' }} />
+      </IconButton>
     </Box>
   )
 }
@@ -110,16 +149,7 @@ export default function Home() {
       </Box>
 
       {/* Top rated carousel */}
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 800,
-          color: '#f1e9ff',
-          mb: 3,
-        }}
-      >
-        Top Rated Anime
-      </Typography>
+      <SectionHeader title="Top Rated Anime" to="/category/top-rated" />
 
       {topRated.loading ? (
         <CarouselSkeleton />
@@ -134,17 +164,12 @@ export default function Home() {
       )}
 
       {/* Airing this season carousel */}
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 800,
-          color: '#f1e9ff',
-          mt: 5,
-          mb: 3,
-        }}
-      >
-        Airing Now{airingSeasonLabel ? ` — ${airingSeasonLabel}` : ''}
-      </Typography>
+      <Box sx={{ mt: 5 }}>
+        <SectionHeader
+          title={`Airing Now${airingSeasonLabel ? ` — ${airingSeasonLabel}` : ''}`}
+          to="/category/airing"
+        />
+      </Box>
 
       {airing.loading ? (
         <CarouselSkeleton />
@@ -162,17 +187,12 @@ export default function Home() {
       )}
 
       {/* Upcoming season carousel */}
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 800,
-          color: '#f1e9ff',
-          mt: 5,
-          mb: 3,
-        }}
-      >
-        Upcoming{seasonLabel ? ` — ${seasonLabel}` : ''}
-      </Typography>
+      <Box sx={{ mt: 5 }}>
+        <SectionHeader
+          title={`Upcoming${seasonLabel ? ` — ${seasonLabel}` : ''}`}
+          to="/category/upcoming"
+        />
+      </Box>
 
       {upcoming.loading ? (
         <CarouselSkeleton />

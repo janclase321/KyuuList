@@ -152,6 +152,22 @@ const AIRING_ANIME_QUERY = `
   }
 `
 
+// Flexible browse query for the "Anime" page: optional genre filter,
+// configurable sort (popularity/score/trending), with pagination.
+// genre is nullable — when omitted, AniList simply doesn't filter by it.
+const BROWSE_ANIME_QUERY = `
+  query ($genre: String, $sort: [MediaSort], $page: Int, $perPage: Int) {
+    Page(page: $page, perPage: $perPage) {
+      pageInfo {
+        hasNextPage
+      }
+      media(type: ANIME, genre: $genre, sort: $sort) {
+        ${ANIME_FIELDS}
+      }
+    }
+  }
+`
+
 export async function searchAnime(search = '', perPage = 20) {
   const data = await anilistRequest(SEARCH_ANIME_QUERY, { search, perPage })
   return data.Page.media
@@ -247,6 +263,39 @@ export async function getUpcomingAnime(page = 1, perPage = 8) {
 // fetching more pages as the user scrolls right.
 export async function getTopRatedAnime(page = 1, perPage = 8) {
   const data = await anilistRequest(TOP_RATED_ANIME_QUERY, { page, perPage })
+  return {
+    media: data.Page.media,
+    hasNextPage: data.Page.pageInfo.hasNextPage,
+  }
+}
+
+// AniList's standard genre list (a fixed set on their end) — hardcoded
+// here since it doesn't change and querying it separately would just be
+// an extra round trip for no benefit.
+export const ANILIST_GENRES = [
+  'Action', 'Adventure', 'Comedy', 'Drama', 'Ecchi', 'Fantasy',
+  'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
+  'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller',
+]
+
+// AniList's sort enum values for the three modes the Anime page supports.
+export const BROWSE_SORT_OPTIONS = {
+  popularity: { label: 'Popularity', value: 'POPULARITY_DESC' },
+  score: { label: 'Score', value: 'SCORE_DESC' },
+  trending: { label: 'Trending', value: 'TRENDING_DESC' },
+}
+
+// Returns { media, hasNextPage } for the general "Anime" browse page.
+// genre: one of ANILIST_GENRES, or null/undefined for no filter.
+// sortKey: one of BROWSE_SORT_OPTIONS' keys ('popularity' | 'score' | 'trending').
+export async function getBrowseAnime({ genre = null, sortKey = 'popularity', page = 1, perPage = 24 } = {}) {
+  const sortValue = BROWSE_SORT_OPTIONS[sortKey]?.value ?? BROWSE_SORT_OPTIONS.popularity.value
+  const data = await anilistRequest(BROWSE_ANIME_QUERY, {
+    genre,
+    sort: [sortValue],
+    page,
+    perPage,
+  })
   return {
     media: data.Page.media,
     hasNextPage: data.Page.pageInfo.hasNextPage,
