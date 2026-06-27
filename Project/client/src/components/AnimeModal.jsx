@@ -12,7 +12,10 @@ import BookmarkAddOutlinedIcon from '@mui/icons-material/BookmarkAddOutlined'
 import Fade from '@mui/material/Fade'
 import { buildAnimeSlug } from '../services/anilist.js'
 import { useAuth } from '../context/AuthContext.jsx'
-import { getWatchlistEntry, upsertWatchlistEntry, WATCH_STATUS } from '../services/watchlist.js'
+import { fetchUserWatchlist, upsertWatchlistEntry } from '../services/api.js'
+import AuthModal from './AuthModal.jsx'
+
+const PLAN_TO_WATCH = 'plan to watch'
 
 /**
  * AnimeModal
@@ -27,6 +30,7 @@ export default function AnimeModal({ anime, open, onClose }) {
   const { user } = useAuth()
   const [onWatchlist, setOnWatchlist] = useState(false)
   const [savingWatchlist, setSavingWatchlist] = useState(false)
+  const [guestPromptOpen, setGuestPromptOpen] = useState(false)
 
   // Check whether this anime is already on the user's watchlist whenever
   // the modal opens for a (possibly new) anime
@@ -38,8 +42,13 @@ export default function AnimeModal({ anime, open, onClose }) {
         setOnWatchlist(false)
         return
       }
-      const entry = await getWatchlistEntry(user.id, anime.id)
-      if (!cancelled) setOnWatchlist(Boolean(entry))
+      try {
+        const entries = await fetchUserWatchlist(user.id)
+        const exists = entries.some((e) => Number(e.anime_id) === Number(anime.id))
+        if (!cancelled) setOnWatchlist(exists)
+      } catch (err) {
+        console.error('Failed to check watchlist:', err.message)
+      }
     }
 
     checkWatchlist()
@@ -48,13 +57,29 @@ export default function AnimeModal({ anime, open, onClose }) {
     }
   }, [user, anime])
 
-  if (!anime) return null
+  // Even when there's no anime selected (e.g. the parent just cleared
+  // `selected` as part of closing this modal), we still need to render
+  // AuthModal — otherwise opening the guest sign-up prompt from the
+  // watchlist button would unmount it the instant the parent's onClose
+  // fires, before the person ever sees it.
+  if (!anime) {
+    return (
+      <AuthModal
+        open={guestPromptOpen}
+        onClose={() => setGuestPromptOpen(false)}
+        initialMode="signup"
+      />
+    )
+  }
 
   async function handleAddToWatchlist() {
-    if (!user) return
+    if (!user) {
+      setGuestPromptOpen(true)
+      return
+    }
     setSavingWatchlist(true)
     try {
-      await upsertWatchlistEntry(user.id, anime.id, WATCH_STATUS.PLAN_TO_WATCH)
+      await upsertWatchlistEntry(user.id, anime.id, PLAN_TO_WATCH)
       setOnWatchlist(true)
     } catch (err) {
       console.error('Failed to add to watchlist:', err.message)
@@ -80,6 +105,7 @@ export default function AnimeModal({ anime, open, onClose }) {
     : 'No synopsis available.'
 
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -229,48 +255,46 @@ export default function AnimeModal({ anime, open, onClose }) {
                 View Full Details
               </Button>
 
-              {user && (
-                <Button
-                  onClick={handleAddToWatchlist}
-                  disabled={onWatchlist || savingWatchlist}
-                  startIcon={
-                    onWatchlist ? (
-                      <BookmarkAddedIcon fontSize="small" />
-                    ) : (
-                      <BookmarkAddOutlinedIcon fontSize="small" />
-                    )
-                  }
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: '0.82rem',
-                    textTransform: 'none',
-                    px: 2.2,
-                    py: 0.9,
-                    borderRadius: '20px',
-                    color: onWatchlist ? '#c4b5fd' : 'rgba(255,255,255,0.75)',
-                    background: onWatchlist
+              <Button
+                onClick={handleAddToWatchlist}
+                disabled={(user && onWatchlist) || savingWatchlist}
+                startIcon={
+                  user && onWatchlist ? (
+                    <BookmarkAddedIcon fontSize="small" />
+                  ) : (
+                    <BookmarkAddOutlinedIcon fontSize="small" />
+                  )
+                }
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  px: 2.2,
+                  py: 0.9,
+                  borderRadius: '20px',
+                  color: user && onWatchlist ? '#c4b5fd' : 'rgba(255,255,255,0.75)',
+                  background: user && onWatchlist
+                    ? 'rgba(167, 139, 250, 0.12)'
+                    : 'rgba(255,255,255,0.05)',
+                  border: '1px solid',
+                  borderColor: user && onWatchlist
+                    ? 'rgba(167, 139, 250, 0.3)'
+                    : 'rgba(255, 182, 215, 0.18)',
+                  '&:hover': {
+                    background: user && onWatchlist
                       ? 'rgba(167, 139, 250, 0.12)'
-                      : 'rgba(255,255,255,0.05)',
-                    border: '1px solid',
-                    borderColor: onWatchlist
+                      : 'rgba(249, 168, 212, 0.1)',
+                  },
+                  '&.Mui-disabled': {
+                    color: user && onWatchlist ? '#c4b5fd' : 'rgba(255,255,255,0.4)',
+                    borderColor: user && onWatchlist
                       ? 'rgba(167, 139, 250, 0.3)'
-                      : 'rgba(255, 182, 215, 0.18)',
-                    '&:hover': {
-                      background: onWatchlist
-                        ? 'rgba(167, 139, 250, 0.12)'
-                        : 'rgba(249, 168, 212, 0.1)',
-                    },
-                    '&.Mui-disabled': {
-                      color: onWatchlist ? '#c4b5fd' : 'rgba(255,255,255,0.4)',
-                      borderColor: onWatchlist
-                        ? 'rgba(167, 139, 250, 0.3)'
-                        : 'rgba(255, 182, 215, 0.12)',
-                    },
-                  }}
-                >
-                  {onWatchlist ? 'On Watchlist' : 'Add to Watchlist'}
-                </Button>
-              )}
+                      : 'rgba(255, 182, 215, 0.12)',
+                  },
+                }}
+              >
+                {user && onWatchlist ? 'On Watchlist' : 'Add to Watchlist'}
+              </Button>
             </Box>
 
             {/* Genres */}
@@ -319,6 +343,13 @@ export default function AnimeModal({ anime, open, onClose }) {
         </Box>
       </Fade>
     </Modal>
+
+    <AuthModal
+      open={guestPromptOpen}
+      onClose={() => setGuestPromptOpen(false)}
+      initialMode="signup"
+    />
+    </>
   )
 }
 

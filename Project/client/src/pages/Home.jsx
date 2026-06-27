@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import HeroSlideshow from '../components/HeroSlideshow.jsx'
+import SignUpBanner from '../components/SignUpBanner.jsx'
 import AnimeCarousel from '../components/AnimeCarousel.jsx'
 import AnimeModal from '../components/AnimeModal.jsx'
 import { usePaginatedAnime } from '../services/usePaginatedAnime.js'
@@ -147,6 +148,9 @@ export default function Home() {
           loading={trendingLoading}
         />
       </Box>
+
+      {/* Sign-up CTA — only renders for logged-out visitors */}
+      <SignUpBanner />
 
       {/* Top rated carousel */}
       <SectionHeader title="Top Rated Anime" to="/category/top-rated" />
